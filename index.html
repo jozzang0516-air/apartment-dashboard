@@ -14,36 +14,41 @@
     <!-- PapaParse CDN: 구글 시트의 CSV 데이터를 쉽게 파싱하기 위해 사용 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-    <!-- 사용자 정의 스타일 (반투명 카드 및 배경) -->
+    <!-- 사용자 정의 스타일 (다크 모드 글래스모피즘) -->
     <style>
         body {
-            /* 부드러운 그라데이션 배경 적용 */
-            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            /* 짙은 남색(Deep Navy) 바탕에 시선을 뺏지 않는 은은한 보라색 추상 그라데이션 포인트 적용 */
+            background: radial-gradient(circle at top right, rgba(88, 28, 135, 0.15), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(49, 46, 129, 0.2), transparent 40%),
+                        #0f172a; /* Tailwind의 slate-900 (Deep Navy) */
             min-height: 100vh;
         }
         
-        /* 반투명 카드 (Translucent / Semi-transparent) 및 둥근 모서리 스타일 정의 */
+        /* 다크 모드용 반투명 카드 (Translucent) 및 둥근 모서리 스타일 정의 */
         .glass-card {
-            background: rgba(255, 255, 255, 0.65);
+            background: rgba(30, 41, 59, 0.4); /* slate-800 반투명 */
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.08); /* 얇고 반투명한 흰색 테두리 */
             border-radius: 1.5rem; /* 둥근 모서리 */
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3); /* 피로도를 줄인 차분한 어두운 그림자 */
         }
 
-        /* 테이블 스크롤바 커스텀 */
+        /* 테이블 스크롤바 커스텀 (다크 모드 톤에 맞춤) */
         .table-container::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         .table-container::-webkit-scrollbar-thumb {
-            background-color: rgba(156, 163, 175, 0.5);
+            background-color: rgba(255, 255, 255, 0.15);
             border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(255, 255, 255, 0.25);
         }
     </style>
 </head>
-<body class="text-gray-800 font-sans p-4 md:p-8 flex flex-col items-center">
+<body class="text-gray-200 font-sans p-4 md:p-8 flex flex-col items-center">
 
     <!-- 대시보드 전체 컨테이너 -->
     <div class="max-w-7xl w-full space-y-6">
@@ -51,11 +56,11 @@
         <!-- 대시보드 헤더 -->
         <header class="glass-card p-6 flex justify-between items-center">
             <div>
-                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">우리 동네 아파트 실거래가 대시보드</h1>
-                <p class="text-gray-500 mt-2 text-sm" id="update-status">데이터를 불러오는 중입니다...</p>
+                <h1 class="text-2xl md:text-3xl font-bold text-white">우리 동네 아파트 실거래가 대시보드</h1>
+                <p class="text-gray-400 mt-2 text-sm" id="update-status">데이터를 불러오는 중입니다...</p>
             </div>
             <!-- 장식용 아이콘 -->
-            <div class="hidden md:block bg-blue-100 p-3 rounded-full text-blue-600">
+            <div class="hidden md:block bg-blue-900/40 p-3 rounded-full text-blue-400 border border-blue-500/20">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
@@ -66,23 +71,23 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- 전체 거래 건수 카드 -->
             <div class="glass-card p-6 flex flex-col justify-center">
-                <span class="text-gray-500 text-sm font-semibold mb-1">전체 거래 건수</span>
-                <span class="text-3xl font-bold text-blue-600" id="total-count">- 건</span>
+                <span class="text-gray-400 text-sm font-semibold mb-1">전체 거래 건수</span>
+                <span class="text-3xl font-bold text-blue-400" id="total-count">- 건</span>
             </div>
             <!-- 평균 거래가격 카드 -->
             <div class="glass-card p-6 flex flex-col justify-center">
-                <span class="text-gray-500 text-sm font-semibold mb-1">평균 거래가격</span>
-                <span class="text-3xl font-bold text-green-600" id="avg-price">- 만원</span>
+                <span class="text-gray-400 text-sm font-semibold mb-1">평균 거래가격</span>
+                <span class="text-3xl font-bold text-green-400" id="avg-price">- 만원</span>
             </div>
             <!-- 최고 거래가격 카드 -->
             <div class="glass-card p-6 flex flex-col justify-center">
-                <span class="text-gray-500 text-sm font-semibold mb-1">최고 거래가격</span>
-                <span class="text-3xl font-bold text-red-500" id="max-price">- 만원</span>
+                <span class="text-gray-400 text-sm font-semibold mb-1">최고 거래가격</span>
+                <span class="text-3xl font-bold text-red-400" id="max-price">- 만원</span>
             </div>
             <!-- 최저 거래가격 카드 -->
             <div class="glass-card p-6 flex flex-col justify-center">
-                <span class="text-gray-500 text-sm font-semibold mb-1">최저 거래가격</span>
-                <span class="text-3xl font-bold text-indigo-500" id="min-price">- 만원</span>
+                <span class="text-gray-400 text-sm font-semibold mb-1">최저 거래가격</span>
+                <span class="text-3xl font-bold text-indigo-400" id="min-price">- 만원</span>
             </div>
         </div>
 
@@ -91,7 +96,7 @@
             
             <!-- 월별 평균 거래가격 차트 영역 -->
             <div class="glass-card p-6 lg:col-span-2">
-                <h2 class="text-lg font-bold text-gray-700 mb-4">월별 평균 거래가격 추이</h2>
+                <h2 class="text-lg font-bold text-gray-100 mb-4">월별 평균 거래가격 추이</h2>
                 <div class="relative h-[300px] w-full">
                     <canvas id="priceChart"></canvas>
                 </div>
@@ -99,43 +104,43 @@
 
             <!-- 지역 및 면적 등 추가 요약 정보 (필요시 확장 가능) -->
             <div class="glass-card p-6 flex flex-col justify-center items-center text-center">
-                <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div class="w-24 h-24 bg-blue-900/30 rounded-full flex items-center justify-center mb-4 border border-blue-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                 </div>
-                <h3 class="text-gray-700 font-semibold mb-2">데이터 분석 안내</h3>
-                <p class="text-sm text-gray-500 leading-relaxed">
+                <h3 class="text-gray-200 font-semibold mb-2">데이터 분석 안내</h3>
+                <p class="text-sm text-gray-400 leading-relaxed">
                     본 대시보드는 실거래가 데이터를 바탕으로 작성되었습니다.<br>
-                    우측 하단의 테이블에서 상세 거래 내역을 확인할 수 있습니다.
+                    하단의 테이블에서 상세 거래 내역을 확인할 수 있습니다.
                 </p>
             </div>
         </div>
 
         <!-- 거래 목록 테이블 영역 -->
         <div class="glass-card p-6 table-container overflow-hidden flex flex-col">
-            <h2 class="text-lg font-bold text-gray-700 mb-4">최근 거래 목록</h2>
-            <div class="overflow-x-auto max-h-[400px] overflow-y-auto rounded-xl">
-                <table class="w-full text-left text-sm text-gray-600 border-collapse whitespace-nowrap">
-                    <thead class="bg-gray-50/50 sticky top-0 backdrop-blur-sm z-10">
+            <h2 class="text-lg font-bold text-gray-100 mb-4">최근 거래 목록</h2>
+            <div class="overflow-x-auto max-h-[400px] overflow-y-auto rounded-xl border border-slate-700/50">
+                <table class="w-full text-left text-sm text-gray-300 border-collapse whitespace-nowrap">
+                    <thead class="bg-slate-800/80 sticky top-0 backdrop-blur-md z-10">
                         <tr>
-                            <th class="p-3 font-semibold border-b border-gray-200">거래일자</th>
-                            <th class="p-3 font-semibold border-b border-gray-200">아파트명</th>
-                            <th class="p-3 font-semibold border-b border-gray-200">법정동</th>
-                            <th class="p-3 font-semibold border-b border-gray-200 text-right">전용면적(㎡)</th>
-                            <th class="p-3 font-semibold border-b border-gray-200 text-center">층</th>
-                            <th class="p-3 font-semibold border-b border-gray-200 text-right text-blue-600">거래금액(만원)</th>
-                            <th class="p-3 font-semibold border-b border-gray-200 text-center">건축년도</th>
+                            <th class="p-3 font-semibold border-b border-slate-700/50">거래일자</th>
+                            <th class="p-3 font-semibold border-b border-slate-700/50">아파트명</th>
+                            <th class="p-3 font-semibold border-b border-slate-700/50">법정동</th>
+                            <th class="p-3 font-semibold border-b border-slate-700/50 text-right">전용면적(㎡)</th>
+                            <th class="p-3 font-semibold border-b border-slate-700/50 text-center">층</th>
+                            <th class="p-3 font-semibold border-b border-slate-700/50 text-right text-blue-400">거래금액(만원)</th>
+                            <th class="p-3 font-semibold border-b border-slate-700/50 text-center">건축년도</th>
                         </tr>
                     </thead>
-                    <tbody id="table-body" class="divide-y divide-gray-100">
+                    <tbody id="table-body" class="divide-y divide-slate-700/50">
                         <!-- 자바스크립트를 통해 테이블 로우가 여기에 추가됩니다. -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <!-- 푸터 영역 (요청하신 문구 반영) -->
+        <!-- 푸터 영역 -->
         <footer class="w-full text-center text-sm text-gray-500 py-6">
             &copy; 2026 [더성장연구소]. All Rights Reserved.
         </footer>
@@ -240,16 +245,17 @@
 
             sortedData.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-blue-50/50 transition-colors duration-150';
+                // 다크 모드용 행 호버 색상
+                tr.className = 'hover:bg-slate-700/40 transition-colors duration-150';
                 
                 tr.innerHTML = `
-                    <td class="p-3">${item.date}</td>
-                    <td class="p-3 font-medium text-gray-800">${item.apt}</td>
-                    <td class="p-3">${item.dong}</td>
-                    <td class="p-3 text-right">${item.area}</td>
-                    <td class="p-3 text-center">${item.floor}</td>
-                    <td class="p-3 text-right font-bold text-blue-600">${formatNumber(item.price)}</td>
-                    <td class="p-3 text-center">${item.year}</td>
+                    <td class="p-3 text-gray-400">${item.date}</td>
+                    <td class="p-3 font-medium text-gray-100">${item.apt}</td>
+                    <td class="p-3 text-gray-300">${item.dong}</td>
+                    <td class="p-3 text-right text-gray-300">${item.area}</td>
+                    <td class="p-3 text-center text-gray-400">${item.floor}</td>
+                    <td class="p-3 text-right font-bold text-blue-400">${formatNumber(item.price)}</td>
+                    <td class="p-3 text-center text-gray-400">${item.year}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -262,7 +268,6 @@
 
             data.forEach(item => {
                 // 'YYYY-MM-DD' 또는 'YYYY.MM.DD' 형식에서 년/월 추출 (앞에서 7자리)
-                // 데이터 형식에 따라 수정이 필요할 수 있습니다. (예: 2023-10)
                 let monthStr = '';
                 if(item.date.includes('-')) {
                     monthStr = item.date.substring(0, 7);
@@ -294,7 +299,10 @@
                 myChart.destroy();
             }
 
-            // 차트 스타일 및 옵션 설정
+            // 차트 폰트 색상을 전역적으로 다크 모드에 맞게 설정
+            Chart.defaults.color = '#9ca3af';
+
+            // 차트 스타일 및 옵션 설정 (다크 모드 적용)
             myChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -302,11 +310,11 @@
                     datasets: [{
                         label: '월별 평균 거래가격 (만원)',
                         data: chartValues,
-                        borderColor: '#3b82f6', // 파란색 선
-                        backgroundColor: 'rgba(59, 130, 246, 0.2)', // 반투명 파란색 배경
+                        borderColor: '#60a5fa', // Tailwind blue-400
+                        backgroundColor: 'rgba(96, 165, 250, 0.15)', // 반투명 파란색 배경
                         borderWidth: 3,
-                        pointBackgroundColor: '#ffffff',
-                        pointBorderColor: '#3b82f6',
+                        pointBackgroundColor: '#1e293b', // 포인트 배경 (어두운 색)
+                        pointBorderColor: '#60a5fa', // 포인트 테두리
                         pointBorderWidth: 2,
                         pointRadius: 4,
                         fill: true,
@@ -318,14 +326,15 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            display: false // 범례 숨김 (레이블이 명확하므로)
+                            display: false // 범례 숨김
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                            titleColor: '#1f2937',
-                            bodyColor: '#1f2937',
-                            borderColor: '#e5e7eb',
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)', // 다크 모드 툴팁 배경
+                            titleColor: '#f3f4f6', // 밝은 텍스트
+                            bodyColor: '#f3f4f6',
+                            borderColor: 'rgba(255, 255, 255, 0.1)',
                             borderWidth: 1,
+                            padding: 12,
                             callbacks: {
                                 label: function(context) {
                                     return formatNumber(context.parsed.y) + ' 만원';
@@ -337,15 +346,19 @@
                         x: {
                             grid: {
                                 display: false
+                            },
+                            ticks: {
+                                color: '#9ca3af' // x축 텍스트 색상
                             }
                         },
                         y: {
                             grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
+                                color: 'rgba(255, 255, 255, 0.05)' // 가이드라인 색상
                             },
                             ticks: {
+                                color: '#9ca3af', // y축 텍스트 색상
                                 callback: function(value) {
-                                    // Y축 숫자 축약 (예: 10,000)
+                                    // Y축 숫자 콤마 표시
                                     return formatNumber(value);
                                 }
                             }
