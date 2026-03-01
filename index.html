@@ -46,6 +46,12 @@
         .table-container::-webkit-scrollbar-thumb:hover {
             background-color: rgba(255, 255, 255, 0.25);
         }
+
+        /* 드롭다운(select) 스크롤바 및 스타일링 개선 */
+        select option {
+            background-color: #1e293b; /* slate-800 */
+            color: #f3f4f6; /* gray-100 */
+        }
     </style>
 </head>
 <body class="text-gray-200 font-sans p-4 md:p-8 flex flex-col items-center">
@@ -66,6 +72,17 @@
                 </svg>
             </div>
         </header>
+
+        <!-- 필터 컨트롤 영역 (법정동 선택) -->
+        <div class="glass-card p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-3 w-full sm:w-auto">
+                <label for="dong-filter" class="text-gray-300 font-semibold whitespace-nowrap">법정동 선택 :</label>
+                <select id="dong-filter" class="w-full sm:w-auto bg-slate-800/80 text-gray-200 border border-slate-600/50 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow">
+                    <option value="all">전체</option>
+                    <!-- 자바스크립트를 통해 옵션이 동적으로 추가됩니다 -->
+                </select>
+            </div>
+        </div>
 
         <!-- 요약 정보 (전체 건수, 평균, 최고, 최저) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -112,7 +129,7 @@
                 <h3 class="text-gray-200 font-semibold mb-2">데이터 분석 안내</h3>
                 <p class="text-sm text-gray-400 leading-relaxed">
                     본 대시보드는 실거래가 데이터를 바탕으로 작성되었습니다.<br>
-                    하단의 테이블에서 상세 거래 내역을 확인할 수 있습니다.
+                    상단의 필터를 통해 원하는 동네(법정동) 데이터만 모아볼 수 있습니다.
                 </p>
             </div>
         </div>
@@ -152,11 +169,13 @@
         // 구글 시트 CSV 데이터 URL
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSrg_kRH5WJZLFHu05AVjZbOQC2SWAFwNRV3iXzdoLODz3uIuzKehUGAug82xHenexxDSMMua1kDL2N/pub?gid=0&single=true&output=csv';
 
-        // 차트 객체를 저장할 전역 변수
-        let myChart = null;
+        // 전역 상태 변수
+        let globalData = []; // 전체 원본 데이터
+        let myChart = null;  // 차트 객체
 
         // 숫자에 콤마를 찍어주는 함수
         const formatNumber = (num) => {
+            if (num === undefined || num === null || isNaN(num)) return "0";
             return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         };
 
@@ -202,10 +221,14 @@
                         };
                     }).filter(item => item.price > 0 && item.date !== ''); // 유효한 데이터만 필터링
 
-                    // 정제된 데이터로 화면 업데이트 진행
-                    updateSummaryCards(cleanedData);
-                    renderTable(cleanedData);
-                    renderChart(cleanedData);
+                    // 전역 변수에 정제된 데이터 저장
+                    globalData = cleanedData;
+
+                    // 동적으로 법정동 필터 채우기
+                    populateDongFilter(globalData);
+
+                    // 초기 대시보드 렌더링 (전체 데이터 기준)
+                    filterAndUpdateDashboard('all');
                     
                     document.getElementById('update-status').innerText = '최근 업데이트 완료';
                 },
@@ -216,9 +239,54 @@
             });
         }
 
+        // 데이터 기반으로 법정동 드롭다운 옵션 생성
+        function populateDongFilter(data) {
+            const dongSelect = document.getElementById('dong-filter');
+            
+            // 데이터에서 고유한 법정동 추출 및 오름차순 정렬
+            const uniqueDongs = [...new Set(data.map(item => item.dong))].filter(dong => dong !== '');
+            uniqueDongs.sort();
+
+            // select 요소에 option 추가
+            uniqueDongs.forEach(dong => {
+                const option = document.createElement('option');
+                option.value = dong;
+                option.textContent = dong;
+                dongSelect.appendChild(option);
+            });
+
+            // 필터 변경 시 이벤트 처리 (선택한 법정동으로 대시보드 업데이트)
+            dongSelect.addEventListener('change', function(e) {
+                const selectedDong = e.target.value;
+                filterAndUpdateDashboard(selectedDong);
+            });
+        }
+
+        // 선택된 동네에 따라 데이터 필터링 및 화면 업데이트
+        function filterAndUpdateDashboard(selectedDong) {
+            let filteredData = globalData;
+            
+            if (selectedDong !== 'all') {
+                filteredData = globalData.filter(item => item.dong === selectedDong);
+            }
+
+            updateSummaryCards(filteredData);
+            renderTable(filteredData);
+            renderChart(filteredData);
+        }
+
         // 요약 카드(상단 4개) 데이터 업데이트 함수
         function updateSummaryCards(data) {
             const totalCount = data.length;
+            
+            // 데이터가 없는 경우 0으로 초기화
+            if (totalCount === 0) {
+                document.getElementById('total-count').innerText = `0 건`;
+                document.getElementById('avg-price').innerText = `0`;
+                document.getElementById('max-price').innerText = `0`;
+                document.getElementById('min-price').innerText = `0`;
+                return;
+            }
             
             // 거래금액만 모은 배열 생성
             const prices = data.map(item => item.price);
@@ -242,6 +310,14 @@
 
             // 날짜 최신순으로 정렬 (내림차순)
             const sortedData = [...data].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // 데이터가 비어있을 경우 안내 문구 표시
+            if (sortedData.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="7" class="p-6 text-center text-gray-500">해당 조건에 맞는 거래 내역이 없습니다.</td>`;
+                tbody.appendChild(tr);
+                return;
+            }
 
             sortedData.forEach(item => {
                 const tr = document.createElement('tr');
@@ -294,7 +370,7 @@
 
             const ctx = document.getElementById('priceChart').getContext('2d');
             
-            // 기존 차트가 있다면 파괴하고 새로 그림 (중복 렌더링 방지)
+            // 기존 차트가 있다면 파괴하고 새로 그림 (중복 렌더링 및 데이터 겹침 방지)
             if(myChart) {
                 myChart.destroy();
             }
